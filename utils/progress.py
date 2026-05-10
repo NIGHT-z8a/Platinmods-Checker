@@ -46,6 +46,10 @@ class Progress:
         self.current += step
         self._display()
     
+    def start(self):
+        """Start progress display"""
+        self._display()
+    
     def _display(self):
         """Display progress"""
         if not self.show_bar:
@@ -69,7 +73,8 @@ class Progress:
         
         line = f"\r{YELLOW}{self.prefix}{RESET} [{bar}] {CYAN}{self.current}/{self.total}{RESET} ({pct}%) {DIM}ETA: {eta}{RESET}"
         
-        # Clear to end of line
+        # Clear to end of line and print
+        sys.stdout.write("\033[K")  # Clear line
         sys.stdout.write(line)
         sys.stdout.flush()
     
@@ -77,8 +82,8 @@ class Progress:
         """Mark progress as complete"""
         self.current = self.total
         elapsed = self._get_elapsed()
-        print(f"\r{GREEN}{self.prefix}{RESET} [{self._get_bar()}] {GREEN}{self.total}/{self.total}{RESET} (100%) {DIM}Done in {elapsed}{RESET}")
-        print()
+        print()  # New line before finish message
+        print(f"{GREEN}{self.prefix}{RESET} [{self._get_bar()}] {GREEN}{self.total}/{self.total}{RESET} (100%) {DIM}Done in {elapsed}{RESET}")
 
 
 class Spinner:

@@ -2,144 +2,37 @@
 Configuration file - All settings for the script
 """
 
-# Blacklist from Platinmods official spreadsheet
-# These games require permission from G-boy before posting
-BLACKLIST = [
-    # PUBG variants
-    "pubg",
-    "pubg mobile",
-    "pubg new state",
-    "playerunknown battlegrounds",
-    "pubg mobile vn",
-    "pubg mobile kr",
-    "pubg mobile india",
-    # COD variants
-    "call of duty",
-    "cod mobile",
-    "codm",
-    "call of duty warzone",
-    "call of duty mobile vn",
-    "call of duty mobile garena",
-    # Wargaming
-    "world of tanks",
-    "world of warships",
-    "wargaming",
-    # Battle Royale / FPS
-    "stumble guys",
-    "8 ball pool",
-    "guns of boom",
-    "modern strike",
-    "world war heroes",
-    "1v1.lol",
-    "hunt royale",
-    "darts club",
-    # Survival / Strategy
-    "state of survival",
-    "king of avalon",
-    "frost flame king of avalon",
-    # Life simulators
-    "bitlife",
-    "bitlife dogs",
-    "bitlife go",
-    "bitlife espanol",
-    "doglife",
-    # Gacha / RPG
-    "blue archive",
-    "seven deadly sins",
-    "grand cross",
-    "gran cross",
-    "lyssa",
-    "ex astris",
-    "auto brawl chess",
-    "mighty party",
-    "monster trainer",
-    "dungeon maker",
-    "dungeon squad",
-    "combat quest",
-    "eterspire",
-    "octopath traveler",
-    # Casual / Puzzle
-    "coin master",
-    "candy crush soda",
-    "bubble pop",
-    "word cookies",
-    "jewels magic",
-    "lollipop sweet heroes",
-    "brick out",
-    "avatar world",
-    "masha and the bear",
-    "monster hunter puzzles",
-    "muse dash",
-    # Streaming / TV apps (No-Go)
-    "flix vision",
-    "flixoid",
-    "cricfy tv",
-    "cricz tv",
-    "magis tv",
-    # Social / Messaging (No-Go)
-    "whatsapp",
-    "telegram",
-    # AutoResponder (No-Go)
-    "autoresponder",
-    # ChatGPT / AI (No-Go)
-    "chatgpt",
-    # VPN / Privacy
-    "expressvpn",
-    "private internet access",
-    "strava",
-    # Other apps
-    "wattpad",
-    "grammarly",
-    "truecaller",
-    "picsart",
-    "vSCO",
-    "canva",
-    "flipaclip",
-    "notewise",
-    "hiPER calc",
-    "macrorify",
-    "voxbox",
-    "flo period",
-    # Anime / Adult (Nutaku)
-    "virtual succubus",
-    "faynet",
-    "amikin survival",
-    "episode choose your story",
-    "sifting thyme",
-    # Minecraft
-    "minecraft",
-    # Roblox
-    "roblox",
-    # Free Fire
-    "free fire",
-    "garena free fire",
-    # Hitman
-    "hitman blood money",
-    # XCOM
-    "xcom 2",
-    # Total War
-    "total war",
-    # GRID
-    "grid legends",
-    # Company of Heroes
-    "company of heroes",
-    # Avakin Life
-    "avakin life",
-    # Crunchyroll
-    "crunchyroll",
-    # Dawn of Ages
-    "dawn of ages",
-    # Flying High
-    "flying high",
-    # Rally Fury
-    "rally fury",
-    # Cooking Live
-    "cooking live",
-    # Rainbow Survivor
-    "rainbow survivor",
-    # Torrent Search
-    "torrent search",
-]
+import json
+import os
+from pathlib import Path
+
+# Paths
+BASE_DIR = Path(__file__).parent
+DATA_DIR = BASE_DIR / "data"
+BLACKLIST_FILE = DATA_DIR / "blacklist.json"
+
+
+def load_blacklist():
+    """Load blacklist from JSON file"""
+    if not BLACKLIST_FILE.exists():
+        return []
+    
+    try:
+        with open(BLACKLIST_FILE, "r") as f:
+            data = json.load(f)
+        
+        # Flatten all categories into a single list
+        blacklist = []
+        for category, items in data.get("categories", {}).items():
+            blacklist.extend(items)
+        
+        return blacklist
+    except (json.JSONDecodeError, IOError):
+        return []
+
+
+# Blacklist (loaded from external file)
+BLACKLIST = load_blacklist()
 
 # APKPure categories for game discovery
 GAME_CATEGORIES = [

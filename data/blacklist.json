@@ -1,0 +1,142 @@
+{
+    "version": "1.0",
+    "description": "Platinmods Blacklist - Games/apps forbidden to mod",
+    "last_updated": "2024-05-10",
+    "categories": {
+        "pubg_variants": [
+            "pubg",
+            "pubg mobile",
+            "pubg new state",
+            "playerunknown battlegrounds",
+            "pubg mobile vn",
+            "pubg mobile kr",
+            "pubg mobile india"
+        ],
+        "cod_variants": [
+            "call of duty",
+            "cod mobile",
+            "codm",
+            "call of duty warzone",
+            "call of duty mobile vn",
+            "call of duty mobile garena"
+        ],
+        "wargaming": [
+            "world of tanks",
+            "world of warships",
+            "wargaming"
+        ],
+        "battle_royale_fps": [
+            "stumble guys",
+            "8 ball pool",
+            "guns of boom",
+            "modern strike",
+            "world war heroes",
+            "1v1.lol",
+            "hunt royale",
+            "darts club"
+        ],
+        "survival_strategy": [
+            "state of survival",
+            "king of avalon",
+            "frost flame king of avalon"
+        ],
+        "life_simulators": [
+            "bitlife",
+            "bitlife dogs",
+            "bitlife go",
+            "bitlife espanol",
+            "doglife"
+        ],
+        "gacha_rpg": [
+            "blue archive",
+            "seven deadly sins",
+            "grand cross",
+            "gran cross",
+            "lyssa",
+            "ex astris",
+            "auto brawl chess",
+            "mighty party",
+            "monster trainer",
+            "dungeon maker",
+            "dungeon squad",
+            "combat quest",
+            "eterspire",
+            "octopath traveler"
+        ],
+        "casual_puzzle": [
+            "coin master",
+            "candy crush soda",
+            "bubble pop",
+            "word cookies",
+            "jewels magic",
+            "lollipop sweet heroes",
+            "brick out",
+            "avatar world",
+            "masha and the bear",
+            "monster hunter puzzles",
+            "muse dash"
+        ],
+        "streaming_tv": [
+            "flix vision",
+            "flixoid",
+            "cricfy tv",
+            "cricz tv",
+            "magis tv"
+        ],
+        "social_messaging": [
+            "whatsapp",
+            "telegram"
+        ],
+        "autoresponder": [
+            "autoresponder"
+        ],
+        "chatgpt_ai": [
+            "chatgpt"
+        ],
+        "vpn_privacy": [
+            "expressvpn",
+            "private internet access",
+            "strava"
+        ],
+        "other_apps": [
+            "wattpad",
+            "grammarly",
+            "truecaller",
+            "picsart",
+            "vsco",
+            "canva",
+            "flipaclip",
+            "notewise",
+            "hiPER calc",
+            "macrorify",
+            "voxbox",
+            "flo period"
+        ],
+        "anime_adult": [
+            "virtual succubus",
+            "faynet",
+            "amikin survival",
+            "episode choose your story",
+            "sifting thyme"
+        ],
+        "other_games": [
+            "minecraft",
+            "roblox",
+            "free fire",
+            "garena free fire",
+            "hitman blood money",
+            "xcom 2",
+            "total war",
+            "grid legends",
+            "company of heroes",
+            "avakin life",
+            "crunchyroll",
+            "dawn of ages",
+            "flying high",
+            "rally fury",
+            "cooking live",
+            "rainbow survivor",
+            "torrent search"
+        ]
+    }
+}

@@ -202,11 +202,11 @@ def menu_check_game():
     
     pkg = input(f"  {CYAN}Package name (optional) {GREEN}▶{RESET} ").strip() or None
     
-    spinner = Spinner("Searching Platinmods")
-    spinner.start()
+    progress = Progress(1, prefix="Checking")
+    progress.start()
     
     result = check_single_game(game, pkg)
-    spinner.stop(True)
+    progress.finish()
     
     if result["status"] == "blacklisted":
         print_error(f"BLACKLISTED - {result['reason']}")
@@ -235,19 +235,16 @@ def menu_check_playstore_url():
     
     print_info(f"Extracted package: {package}")
     
-    spinner = Spinner("Fetching game name")
-    spinner.start()
+    progress = Progress(2, prefix="Checking")
+    progress.start()
     
     game_name = get_game_name_from_playstore(package)
     game_name = clean_game_name(game_name)
-    spinner.stop(True)
+    progress.update()
     print_info(f"Game name: {game_name}")
     
-    spinner = Spinner("Checking Platinmods")
-    spinner.start()
-    
     result = check_single_game(game_name, package)
-    spinner.stop(True)
+    progress.finish()
     
     if result["status"] == "blacklisted":
         print_error(f"BLACKLISTED - {result['reason']}")
@@ -271,11 +268,11 @@ def menu_search_apkpure():
     if not query:
         return
     
-    spinner = Spinner("Searching APKPure")
-    spinner.start()
+    progress = Progress(1, prefix="Searching")
+    progress.start()
     
     games, error = search_games(query)
-    spinner.stop(error is None)
+    progress.finish()
     
     if error or not games:
         print_error("No results found.")
@@ -317,15 +314,14 @@ def menu_find_moddable():
         print_error("Could not fetch games. Check your internet connection.")
         return
     
-    print(f"{YELLOW}Found {len(games)} games. Checking against Platinmods...{RESET}\n")
+    print(f"{YELLOW}Found {len(games)} games. Checking against Platinmods...{RESET}")
     
     all_results = []
     progress = Progress(len(games[:15]), prefix="Checking")
     
     def on_progress(current, total, result):
-        progress.current = current - 1
-        progress.update()
         all_results.append(result)
+        progress.update()
     
     results = find_moddable_games(games, max_checks=15, progress_callback=on_progress)
     progress.finish()
