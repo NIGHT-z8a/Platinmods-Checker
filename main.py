@@ -10,7 +10,7 @@ import re
 import urllib.parse
 
 from scrapers.platinmods import check_game as platinmods_check
-from scrapers.apkpure import search_games, get_trending_games, get_games_by_category
+from scrapers.apkpure import search_games, get_trending_games, get_games_by_category, get_game_metadata
 from core.checker import check_single_game, find_moddable_games
 from config import BLACKLIST, GAME_CATEGORIES
 from core.cache import cache
@@ -65,6 +65,7 @@ def print_menu():
     print(f"{BOLD}{BLUE}│{RESET}  {GREEN}5.{RESET} Batch check from file{' ' * (MENU_WIDTH - 26)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {GREEN}6.{RESET} View blacklist{' ' * (MENU_WIDTH - 19)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {GREEN}7.{RESET} Cache settings{' ' * (MENU_WIDTH - 19)}{BOLD}{BLUE}│{RESET}")
+    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}8.{RESET} Smart game filter{' ' * (MENU_WIDTH - 22)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}├{'─' * MENU_WIDTH}┤{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {RED}0.{RESET} Exit{' ' * (MENU_WIDTH - 9)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}└{'─' * MENU_WIDTH}┘{RESET}")
@@ -467,6 +468,102 @@ def menu_cache_info():
         print_success("Cache cleared")
 
 
+def menu_filter_games():
+    """Search games with smart filtering"""
+    print_section("Smart Game Filter")
+    
+    print(f"{CYAN}Filter Settings:{RESET}")
+    print(f"  {GRAY}Min downloads: 100K | Max downloads: 10M{RESET}")
+    print(f"  {GRAY}Min rating: 4.0 | Exclude online games{RESET}")
+    print()
+    
+    query = input(f"  {CYAN}Search query (e.g., 'rpg offline') {GREEN}▶{RESET} ").strip()
+    if not query:
+        return
+    
+    progress = Progress(1, prefix="Searching")
+    progress.start()
+    
+    games, error = search_games(query, limit=30)
+    progress.finish()
+    
+    if error or not games:
+        print_error("No results found.")
+        return
+    
+    print(f"\n{YELLOW}Found {len(games)} games. Applying filters...{RESET}")
+    
+    filters = {
+        "min_downloads": 100000,
+        "max_downloads": 10000000,
+        "min_rating": 4.0,
+        "exclude_iap": False,
+        "exclude_online": True,
+    }
+    
+    progress = Progress(len(games), prefix="Filtering")
+    filtered = []
+    
+    for game in games:
+        metadata, _ = get_game_metadata(game["package"])
+        if metadata:
+            game["metadata"] = metadata
+            
+            dl = metadata.get("downloads", 0)
+            rating = metadata.get("rating", 0)
+            has_iap = metadata.get("has_iap", False)
+            is_online = metadata.get("is_online", False)
+            
+            if dl < filters["min_downloads"]:
+                progress.update()
+                continue
+            if dl > filters["max_downloads"]:
+                progress.update()
+                continue
+            if rating < filters["min_rating"]:
+                progress.update()
+                continue
+            if filters["exclude_online"] and is_online:
+                progress.update()
+                continue
+        
+        filtered.append(game)
+        progress.update()
+    
+    progress.finish()
+    
+    if not filtered:
+        print_warning("No games match the filter criteria.")
+        return
+    
+    print(f"\n{BOLD}{GREEN}Filtered Results ({len(filtered)} games):{RESET}\n")
+    
+    for i, game in enumerate(filtered[:15], 1):
+        meta = game.get("metadata", {})
+        dl = meta.get("downloads", 0)
+        rating = meta.get("rating", 0)
+        
+        dl_str = f"{dl/1000000:.1f}M" if dl >= 1000000 else f"{dl/1000:.0f}K"
+        rating_str = f"★ {rating:.1f}" if rating > 0 else "N/A"
+        
+        print(f"  {GREEN}{i}.{RESET} {game['name']}")
+        print(f"     {GRAY}{game['package']} | {dl_str} downloads | {rating_str}{RESET}")
+    
+    choice = input(f"\n  {CYAN}Check a game on Platinmods? (number or 0 to skip) {GREEN}▶{RESET} ").strip()
+    if choice.isdigit() and int(choice) > 0 and int(choice) <= len(filtered):
+        game = filtered[int(choice) - 1]
+        print(f"\n{YELLOW}Checking {game['name']} on Platinmods...{RESET}")
+        result = check_single_game(game["name"], game["package"])
+        
+        if result["status"] == "available":
+            print_success("Available for modding!")
+        elif result["status"] == "modded":
+            print_warning(f"Already modded ({len(result['threads'])} threads)")
+            display_threads(result["threads"])
+        else:
+            print_error(result.get('reason', result.get('error', 'Unknown')))
+
+
 def main():
     """Main menu loop"""
     while True:
@@ -493,6 +590,8 @@ def main():
             menu_view_blacklist()
         elif choice == "7":
             menu_cache_info()
+        elif choice == "8":
+            menu_filter_games()
         elif choice == "0":
             print(f"\n  {GREEN}Good luck modding!{RESET}\n")
             break
