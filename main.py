@@ -473,8 +473,8 @@ def menu_filter_games():
     print_section("Smart Game Filter")
     
     print(f"{CYAN}Filter Settings:{RESET}")
-    print(f"  {GRAY}Min downloads: 100K | Max downloads: 10M{RESET}")
-    print(f"  {GRAY}Min rating: 4.0 | Exclude online games{RESET}")
+    print(f"  {GRAY}Exclude big publishers | Exclude online games{RESET}")
+    print(f"  {GRAY}Keyword filters: multiplayer, online, pvp{RESET}")
     print()
     
     query = input(f"  {CYAN}Search query (e.g., 'rpg offline') {GREEN}▶{RESET} ").strip()
@@ -494,12 +494,13 @@ def menu_filter_games():
     print(f"\n{YELLOW}Found {len(games)} games. Applying filters...{RESET}")
     
     filters = {
-        "min_downloads": 100000,
-        "max_downloads": 10000000,
-        "min_rating": 4.0,
-        "exclude_iap": False,
+        "exclude_big_publishers": True,
         "exclude_online": True,
+        "keywords_include": [],
+        "keywords_exclude": ["multiplayer", "online", "pvp"],
     }
+    
+    from scrapers.apkpure import filter_games as apkpure_filter
     
     progress = Progress(len(games), prefix="Filtering")
     filtered = []
@@ -509,21 +510,26 @@ def menu_filter_games():
         if metadata:
             game["metadata"] = metadata
             
-            dl = metadata.get("downloads", 0)
-            rating = metadata.get("rating", 0)
-            has_iap = metadata.get("has_iap", False)
+            is_indie = metadata.get("is_indie", True)
             is_online = metadata.get("is_online", False)
             
-            if dl < filters["min_downloads"]:
-                progress.update()
-                continue
-            if dl > filters["max_downloads"]:
-                progress.update()
-                continue
-            if rating < filters["min_rating"]:
+            if filters["exclude_big_publishers"] and not is_indie:
                 progress.update()
                 continue
             if filters["exclude_online"] and is_online:
+                progress.update()
+                continue
+            
+            name_lower = game["name"].lower()
+            pkg_lower = game["package"].lower()
+            
+            skip = False
+            for keyword in filters["keywords_exclude"]:
+                if keyword in name_lower or keyword in pkg_lower:
+                    skip = True
+                    break
+            
+            if skip:
                 progress.update()
                 continue
         
@@ -543,7 +549,7 @@ def menu_filter_games():
         dl = meta.get("downloads", 0)
         rating = meta.get("rating", 0)
         
-        dl_str = f"{dl/1000000:.1f}M" if dl >= 1000000 else f"{dl/1000:.0f}K"
+        dl_str = f"{dl/1000000:.1f}M" if dl >= 1000000 else f"{dl/1000:.0f}K" if dl > 0 else "N/A"
         rating_str = f"★ {rating:.1f}" if rating > 0 else "N/A"
         
         print(f"  {GREEN}{i}.{RESET} {game['name']}")
