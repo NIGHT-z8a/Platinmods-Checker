@@ -1,0 +1,55 @@
+{
+  "timestamp": 1778446753.3556242,
+  "result": [
+    {
+      "name": "Arcade Word",
+      "url": "https://apkpure.com/arcade-word/com.candy.messenger.fc.tx2",
+      "package": "com.candy.messenger.fc.tx2"
+    },
+    {
+      "name": "Fireworks Arcade",
+      "url": "https://apkpure.com/fireworks-arcade/com.bigduckgames.fireworksarcade",
+      "package": "com.bigduckgames.fireworksarcade"
+    },
+    {
+      "name": "Age Of Kings Skyward Battle",
+      "url": "https://apkpure.com/age-of-kings-skyward-battle/com.stac.aok",
+      "package": "com.stac.aok"
+    },
+    {
+      "name": "Arcade",
+      "url": "https://apkpure.com/arcade/com.inhouse.arcade",
+      "package": "com.inhouse.arcade"
+    },
+    {
+      "name": "Offline Games No Wifi Arcade",
+      "url": "https://apkpure.com/offline-games-no-wifi-arcade/com.offlinegames.offlinegames",
+      "package": "com.offlinegames.offlinegames"
+    },
+    {
+      "name": "Arcade Kirby Adventure",
+      "url": "https://apkpure.com/arcade-kirby-adventure/com.n64.arcade.kirby",
+      "package": "com.n64.arcade.kirby"
+    },
+    {
+      "name": "Yono Arcade",
+      "url": "https://apkpure.com/yono-arcade/com.yonoarcade.free",
+      "package": "com.yonoarcade.free"
+    },
+    {
+      "name": "Arcade 98",
+      "url": "https://apkpure.com/arcade-98/com.epsxe.ePSXe_kof98_norom",
+      "package": "com.epsxe.ePSXe_kof98_norom"
+    },
+    {
+      "name": "Super Arcade",
+      "url": "https://apkpure.com/super-arcade/com.old.game.retro.street",
+      "package": "com.old.game.retro.street"
+    },
+    {
+      "name": "Arcade Room",
+      "url": "https://apkpure.com/arcade-room/com.nes.arcade.mame",
+      "package": "com.nes.arcade.mame"
+    }
+  ]
+}
