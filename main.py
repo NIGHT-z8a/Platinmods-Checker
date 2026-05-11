@@ -303,11 +303,61 @@ def menu_find_moddable():
     """Auto-scan for moddable games"""
     print_section("Find Moddable Games (Auto-Scan)")
     
-    print(f"{YELLOW}Fetching games from APKPure...{RESET}")
+    print(f"{CYAN}Scan Configuration:{RESET}")
+    print(f"  {GREEN}1.{RESET} Quick scan (3 categories, 10 each)")
+    print(f"  {GREEN}2.{RESET} Deep scan (all categories, 15 each)")
+    print(f"  {GREEN}3.{RESET} Custom scan")
+    print(f"  {GREEN}0.{RESET} Back")
+    
+    choice = input(f"\n  {BOLD}Select {GREEN}▶{RESET} ").strip()
+    
+    if choice == "1":
+        categories = GAME_CATEGORIES[:3]
+        per_cat = 10
+        max_checks = 15
+    elif choice == "2":
+        categories = GAME_CATEGORIES
+        per_cat = 15
+        max_checks = 30
+    elif choice == "3":
+        print(f"\n{CYAN}Categories:{RESET}")
+        for i, cat in enumerate(GAME_CATEGORIES, 1):
+            print(f"  {GREEN}{i}.{RESET} {cat['name']}")
+        print(f"  {GREEN}a.{RESET} Select all")
+        print(f"  {GREEN}0.{RESET} Back")
+        
+        cat_input = input(f"\n  {BOLD}Select (comma-separated) {GREEN}▶{RESET} ").strip()
+        if cat_input == "0":
+            return
+        
+        if cat_input.lower() == "a":
+            categories = GAME_CATEGORIES
+        else:
+            indices = [int(x.strip()) - 1 for x in cat_input.split(",") if x.strip().isdigit()]
+            categories = [GAME_CATEGORIES[i] for i in indices if 0 <= i < len(GAME_CATEGORIES)]
+        
+        if not categories:
+            print_error("No valid categories selected.")
+            return
+        
+        per_cat_input = input(f"  {CYAN}Games per category (default 10) {GREEN}▶{RESET} ").strip()
+        per_cat = int(per_cat_input) if per_cat_input.isdigit() and int(per_cat_input) > 0 else 10
+        
+        max_input = input(f"  {CYAN}Max Platinmods checks (default 15) {GREEN}▶{RESET} ").strip()
+        max_checks = int(max_input) if max_input.isdigit() and int(max_input) > 0 else 15
+    else:
+        return
+    
+    exclude_big = input(f"  {CYAN}Exclude big publishers? (Y/n) {GREEN}▶{RESET} ").strip().lower() != "n"
+    exclude_online = input(f"  {CYAN}Exclude online games? (Y/n) {GREEN}▶{RESET} ").strip().lower() != "n"
+    
+    print(f"\n{YELLOW}Fetching games from APKPure...{RESET}")
+    
+    from core.checker import pre_filter_games
     
     games = []
-    for cat in GAME_CATEGORIES[:3]:
-        cat_games, error = get_games_by_category(cat["id"], limit=10)
+    for cat in categories:
+        cat_games, error = get_games_by_category(cat["id"], limit=per_cat)
         if cat_games:
             games.extend(cat_games)
     
@@ -315,21 +365,41 @@ def menu_find_moddable():
         print_error("Could not fetch games. Check your internet connection.")
         return
     
-    print(f"{YELLOW}Found {len(games)} games. Checking against Platinmods...{RESET}")
+    print(f"  {GRAY}Fetched {len(games)} games from {len(categories)} categories{RESET}")
+    
+    print(f"{YELLOW}Pre-filtering (removing blacklisted, big publishers, online)...{RESET}")
+    games = pre_filter_games(games, exclude_big_publishers=exclude_big, exclude_online=exclude_online)
+    print(f"  {GRAY}{len(games)} games remaining after filter{RESET}")
+    
+    if not games:
+        print_warning("No games pass the filter. Try adjusting settings.")
+        return
+    
+    games = games[:max_checks]
+    print(f"\n{YELLOW}Checking {len(games)} games against Platinmods...{RESET}")
     
     all_results = []
-    progress = Progress(len(games[:15]), prefix="Checking")
+    progress = Progress(len(games), prefix="Checking")
+    progress.start()
     
-    def on_progress(current, total, result):
+    def on_progress(current, total, result, game):
         all_results.append(result)
-        progress.update()
+        progress.update(current_game=game.get("name", ""))
     
-    results = find_moddable_games(games, max_checks=15, progress_callback=on_progress)
+    from core.checker import find_moddable_games as find_moddable
+    results = find_moddable(games, max_checks=len(games), progress_callback=on_progress)
     progress.finish()
     
     print(f"\n{BOLD}{GREEN}Available for modding ({len(results['available'])}):{RESET}")
     for r in results["available"]:
+        meta = r.get("metadata", {})
+        size = meta.get("size", "")
+        version = meta.get("version", "")
+        indie_str = "Indie" if meta.get("is_indie", True) else "Publisher"
+        extras = " | ".join(x for x in [size, f"v{version}" if version else "", indie_str] if x)
         print(f"  {GREEN}✓{RESET} {r['name']} {GRAY}({r['package']}){RESET}")
+        if extras:
+            print(f"    {GRAY}{extras}{RESET}")
     
     print(f"\n{BOLD}{RED}Already modded ({len(results['modded'])}):{RESET}")
     for r in results["modded"]:
@@ -340,24 +410,23 @@ def menu_find_moddable():
         for r in results["blacklisted"]:
             print(f"  {RED}⛔{RESET} {r['name']} {GRAY}({r['reason']}){RESET}")
     
-    # Export option
-    if all_results:
-        print(f"\n{YELLOW}Save results?{RESET}")
+    if results["available"]:
+        print(f"\n{YELLOW}Save available games?{RESET}")
         print(f"  {GREEN}1.{RESET} Export as JSON")
         print(f"  {GREEN}2.{RESET} Export as CSV")
         print(f"  {GREEN}3.{RESET} Export as text")
         print(f"  {GREEN}0.{RESET} Skip")
         
         choice = input(f"\n  {BOLD}Select {GREEN}▶{RESET} ").strip()
-        if choice == "1":
-            filepath = export_json(all_results)
-            print_success(f"Saved to {filepath}")
-        elif choice == "2":
-            filepath = export_csv(all_results)
-            print_success(f"Saved to {filepath}")
-        elif choice == "3":
-            filepath = export_text(all_results)
-            print_success(f"Saved to {filepath}")
+        if choice in ("1", "2", "3"):
+            avail_only = [r for r in all_results if r["status"] == "available"]
+            if choice == "1":
+                filepath = export_json(avail_only)
+            elif choice == "2":
+                filepath = export_csv(avail_only)
+            else:
+                filepath = export_text(avail_only)
+            print_success(f"Saved {len(avail_only)} games to {filepath}")
 
 
 def menu_batch_check():

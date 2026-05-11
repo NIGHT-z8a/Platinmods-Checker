@@ -24,6 +24,7 @@ class Progress:
         self.show_bar = show_bar
         self.start_time = time.time()
         self.bar_width = 30
+        self.current_game = ""
     
     def _get_bar(self):
         """Generate progress bar string"""
@@ -41,9 +42,11 @@ class Progress:
             return f"{elapsed:.1f}s"
         return f"{elapsed/60:.1f}m"
     
-    def update(self, step=1):
+    def update(self, step=1, current_game=""):
         """Update progress by step"""
         self.current += step
+        if current_game:
+            self.current_game = current_game
         self._display()
     
     def start(self):
@@ -71,7 +74,8 @@ class Progress:
         else:
             eta = "??"
         
-        line = f"\r{YELLOW}{self.prefix}{RESET} [{bar}] {CYAN}{self.current}/{self.total}{RESET} ({pct}%) {DIM}ETA: {eta}{RESET}"
+        game_info = f" {DIM}→ {self.current_game[:40]}{RESET}" if self.current_game else ""
+        line = f"\r{YELLOW}{self.prefix}{RESET} [{bar}] {CYAN}{self.current}/{self.total}{RESET} ({pct}%) {DIM}ETA: {eta}{RESET}{game_info}"
         
         # Clear to end of line and print
         sys.stdout.write("\033[K")  # Clear line

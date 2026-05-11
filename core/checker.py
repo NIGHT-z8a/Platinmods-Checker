@@ -7,6 +7,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scrapers.platinmods import check_game as platinmods_check
+from scrapers.apkpure import get_game_metadata
 from config import BLACKLIST
 
 
@@ -59,6 +60,31 @@ def check_single_game(game_name, package_name=None):
     }
 
 
+def pre_filter_games(games, exclude_big_publishers=True, exclude_online=True):
+    """Filter out unworthy games BEFORE checking Platinmods (saves time)"""
+    filtered = []
+    seen_packages = set()
+    
+    for game in games:
+        package = game.get("package", "")
+        if package in seen_packages:
+            continue
+        seen_packages.add(package)
+        
+        metadata, _ = get_game_metadata(package)
+        if metadata:
+            game["metadata"] = metadata
+            
+            if exclude_big_publishers and not metadata.get("is_indie", True):
+                continue
+            if exclude_online and metadata.get("is_online", False):
+                continue
+        
+        filtered.append(game)
+    
+    return filtered
+
+
 def find_moddable_games(games_list, max_checks=10, progress_callback=None):
     """Check multiple games and return categorized results"""
     available = []
@@ -79,7 +105,7 @@ def find_moddable_games(games_list, max_checks=10, progress_callback=None):
             blacklisted.append(result)
         
         if progress_callback:
-            progress_callback(i + 1, len(games_list[:max_checks]), result)
+            progress_callback(i + 1, len(games_list[:max_checks]), result, game)
     
     return {
         "available": available,
