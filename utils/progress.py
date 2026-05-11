@@ -86,6 +86,7 @@ class Progress:
         """Mark progress as complete"""
         self.current = self.total
         elapsed = self._get_elapsed()
+        self.current_game = ""
         print()  # New line before finish message
         print(f"{GREEN}{self.prefix}{RESET} [{self._get_bar()}] {GREEN}{self.total}/{self.total}{RESET} (100%) {DIM}Done in {elapsed}{RESET}")
 

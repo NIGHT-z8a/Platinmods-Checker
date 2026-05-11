@@ -382,8 +382,7 @@ def menu_find_moddable():
     progress = Progress(len(games), prefix="Checking")
     progress.start()
     
-    def on_progress(current, total, result, game):
-        all_results.append(result)
+    def on_progress(current, total, game):
         progress.update(current_game=game.get("name", ""))
     
     from core.checker import find_moddable_games as find_moddable
@@ -427,6 +426,8 @@ def menu_find_moddable():
             else:
                 filepath = export_text(avail_only)
             print_success(f"Saved {len(avail_only)} games to {filepath}")
+        elif choice != "0":
+            print_error("Invalid option.")
 
 
 def menu_batch_check():

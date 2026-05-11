@@ -95,6 +95,9 @@ def find_moddable_games(games_list, max_checks=10, progress_callback=None):
         name = game.get("name", "")
         package = game.get("package", "")
         
+        if progress_callback:
+            progress_callback(i + 1, len(games_list[:max_checks]), game)
+        
         result = check_single_game(name, package)
         
         if result["status"] == "available":
@@ -103,9 +106,6 @@ def find_moddable_games(games_list, max_checks=10, progress_callback=None):
             modded.append(result)
         elif result["status"] == "blacklisted":
             blacklisted.append(result)
-        
-        if progress_callback:
-            progress_callback(i + 1, len(games_list[:max_checks]), result, game)
     
     return {
         "available": available,
