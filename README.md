@@ -1,4 +1,6 @@
-# Platinmods Checker
+# Platinmods Checker v1.5.4
+
+**Author:** NIGHT-z
 
 A CLI tool to check if Android games are already modded on [Platinmods](https://platinmods.com) before you start modding them.
 

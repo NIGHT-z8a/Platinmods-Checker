@@ -4,18 +4,15 @@ Platinmods Checker
 Main CLI entry point
 """
 
-import sys
 import os
 import re
-import urllib.parse
 
-from scrapers.platinmods import check_game as platinmods_check
-from scrapers.apkpure import search_games, get_trending_games, get_games_by_category, get_game_metadata
-from core.checker import check_single_game, find_moddable_games
-from config import BLACKLIST, GAME_CATEGORIES
+from scrapers.playstore import search_games, get_games_by_category, get_game_metadata
+from core.checker import check_single_game
+from config import GAME_CATEGORIES
 from core.cache import cache
-from utils.progress import Progress, Spinner
-from core.export import export_json, export_csv, export_text, save_last_check
+from utils.progress import Progress
+from core.export import export_json, export_csv, export_text
 
 # Colors
 RED = "\033[91m"
@@ -29,7 +26,9 @@ GRAY = "\033[90m"
 RESET = "\033[0m"
 BOLD = "\033[1m"
 DIM = "\033[2m"
-UNDERLINE = "\033[4m"
+
+__version__ = "1.5.4"
+__author__ = "NIGHT-z"
 
 # ASCII Art Banner - Rainbow
 BANNER = f"""
@@ -41,7 +40,7 @@ BANNER = f"""
 {MAGENTA}| $$      | $$      | $$  | $$   | $$     | $$  | $$\\  $$$| $$\\  $ | $$| $$  | $$| $$  | $$ /$$  \\ $$
 {RED}| $$      | $$$$$$$$| $$  | $$   | $$    /$$$$$$| $$ \\  $$| $$ \\/  | $$|  $$$$$$/| $$$$$$$/|  $$$$$$/ 
 {YELLOW}|__/      |________/|__/  |__/   |__/   |______/|__/  \\__/|__/     |__/ \\______/ |_______/  \\______/{RESET}
-{DIM}                    Platinmods Game Checker & Finder{RESET}"""
+{DIM}                    Platinmods Game Checker & Finder v{__version__}{RESET}"""
 
 # Menu border style
 MENU_WIDTH = 60
@@ -60,12 +59,9 @@ def print_menu():
     print(f"{BOLD}{BLUE}├{'─' * MENU_WIDTH}┤{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {GREEN}1.{RESET} Check game on Platinmods{' ' * (MENU_WIDTH - 29)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {GREEN}2.{RESET} Check by Google Play URL{' ' * (MENU_WIDTH - 29)}{BOLD}{BLUE}│{RESET}")
-    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}3.{RESET} Search games on APKPure{' ' * (MENU_WIDTH - 28)}{BOLD}{BLUE}│{RESET}")
+    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}3.{RESET} Search games on Play Store{' ' * (MENU_WIDTH - 29)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {GREEN}4.{RESET} Find moddable games (auto-scan){' ' * (MENU_WIDTH - 34)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {GREEN}5.{RESET} Batch check from file{' ' * (MENU_WIDTH - 26)}{BOLD}{BLUE}│{RESET}")
-    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}6.{RESET} View blacklist{' ' * (MENU_WIDTH - 19)}{BOLD}{BLUE}│{RESET}")
-    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}7.{RESET} Cache settings{' ' * (MENU_WIDTH - 19)}{BOLD}{BLUE}│{RESET}")
-    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}8.{RESET} Smart game filter{' ' * (MENU_WIDTH - 22)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}├{'─' * MENU_WIDTH}┤{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {RED}0.{RESET} Exit{' ' * (MENU_WIDTH - 9)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}└{'─' * MENU_WIDTH}┘{RESET}")
@@ -115,16 +111,20 @@ def extract_package_from_play_url(url):
 
 
 def get_game_name_from_playstore(package_name):
-    """Get game name by searching APKPure"""
-    games, error = search_games(package_name, limit=5)
+    """Get game name by searching Play Store"""
+    parts = package_name.split(".")
+    derived = parts[-1].replace("_", " ").title() if len(parts) >= 2 else package_name
+
+    from scrapers.playstore import search_games_batch
+    queries = [package_name, derived]
+    games, error = search_games_batch(queries, limit=5)
     if games:
         for game in games:
             if game["package"] == package_name:
                 return game["name"]
         return games[0]["name"]
-    
-    parts = package_name.split(".")
-    return parts[-1].replace("_", " ").title()
+
+    return derived
 
 
 def clean_game_name(name):
@@ -261,18 +261,18 @@ def menu_check_playstore_url():
         print(f"\n{BOLD}{GREEN}✓ Game is available for modding!{RESET}")
 
 
-def menu_search_apkpure():
-    """Search games on APKPure"""
-    print_section("Search Games on APKPure")
+def menu_search_games():
+    """Search games on Play Store"""
+    print_section("Search Games on Play Store")
     
-    query = input(f"  {CYAN}Search APKPure {GREEN}▶{RESET} ").strip()
+    query = input(f"  {CYAN}Search query {GREEN}▶{RESET} ").strip()
     if not query:
         return
     
     progress = Progress(1, prefix="Searching")
     progress.start()
     
-    games, error = search_games(query)
+    games, error = search_games(query, limit=30)
     progress.finish()
     
     if error or not games:
@@ -280,11 +280,14 @@ def menu_search_apkpure():
         return
     
     print(f"\n{BOLD}{GREEN}Found {len(games)} games:{RESET}\n")
-    for i, game in enumerate(games, 1):
-        print(f"  {GREEN}{i}.{RESET} {game['name']}")
-        print(f"     {GRAY}{game['package']}{RESET}")
+    print(f"  {GRAY}Select a game to check on Platinmods{RESET}\n")
     
-    choice = input(f"\n  {CYAN}Check a game on Platinmods? (number or 0 to skip) {GREEN}▶{RESET} ").strip()
+    for i, game in enumerate(games, 1):
+        name = game["name"][:45] if len(game["name"]) > 45 else game["name"]
+        print(f"  {GREEN}{i:2}.{RESET} {name}")
+        print(f"      {GRAY}{game['package']}{RESET}")
+    
+    choice = input(f"\n  {CYAN}Check which game? (1-{len(games)} or 0 to skip) {GREEN}▶{RESET} ").strip()
     if choice.isdigit() and int(choice) > 0 and int(choice) <= len(games):
         game = games[int(choice) - 1]
         print(f"\n{YELLOW}Checking {game['name']} on Platinmods...{RESET}")
@@ -351,7 +354,7 @@ def menu_find_moddable():
     exclude_big = input(f"  {CYAN}Exclude big publishers? (Y/n) {GREEN}▶{RESET} ").strip().lower() != "n"
     exclude_online = input(f"  {CYAN}Exclude online games? (Y/n) {GREEN}▶{RESET} ").strip().lower() != "n"
     
-    print(f"\n{YELLOW}Fetching games from APKPure...{RESET}")
+    print(f"\n{YELLOW}Fetching games from Play Store...{RESET}")
     
     from core.checker import pre_filter_games
     
@@ -429,217 +432,6 @@ def menu_find_moddable():
         elif choice != "0":
             print_error("Invalid option.")
 
-
-def menu_batch_check():
-    """Batch check games from file"""
-    print_section("Batch Check from File")
-    
-    print(f"{GRAY}Format: One game per line (name,package){RESET}")
-    print(f"{GRAY}Example: Subway Surfers,com.kiloo.subwaysurfers{RESET}")
-    
-    filepath = input(f"\n  {CYAN}File path {GREEN}▶{RESET} ").strip()
-    if not filepath:
-        return
-    
-    if not os.path.exists(filepath):
-        print_error(f"File not found: {filepath}")
-        return
-    
-    games = []
-    with open(filepath, "r") as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith("#"):
-                parts = line.split(",")
-                name = parts[0].strip()
-                package = parts[1].strip() if len(parts) > 1 else None
-                if name:
-                    games.append({"name": name, "package": package})
-    
-    if not games:
-        print_error("No valid games found in file.")
-        return
-    
-    print(f"\n{YELLOW}Found {len(games)} games. Checking...{RESET}\n")
-    
-    all_results = []
-    progress = Progress(len(games), prefix="Checking")
-    
-    for i, game in enumerate(games):
-        result = check_single_game(game["name"], game["package"])
-        all_results.append(result)
-        progress.update()
-    
-    progress.finish()
-    
-    # Display results
-    available = [r for r in all_results if r["status"] == "available"]
-    modded = [r for r in all_results if r["status"] == "modded"]
-    blacklisted = [r for r in all_results if r["status"] == "blacklisted"]
-    
-    print(f"\n{BOLD}{GREEN}Available ({len(available)}):{RESET}")
-    for r in available:
-        print(f"  {GREEN}✓{RESET} {r['name']} {GRAY}({r['package']}){RESET}")
-    
-    print(f"\n{BOLD}{RED}Modded ({len(modded)}):{RESET}")
-    for r in modded:
-        print(f"  {RED}✗{RESET} {r['name']} {GRAY}({len(r['threads'])} threads){RESET}")
-    
-    if blacklisted:
-        print(f"\n{BOLD}{RED}Blacklisted ({len(blacklisted)}):{RESET}")
-        for r in blacklisted:
-            print(f"  {RED}⛔{RESET} {r['name']} {GRAY}({r['reason']}){RESET}")
-    
-    # Export option
-    if all_results:
-        print(f"\n{YELLOW}Save results?{RESET}")
-        print(f"  {GREEN}1.{RESET} Export as JSON")
-        print(f"  {GREEN}2.{RESET} Export as CSV")
-        print(f"  {GREEN}3.{RESET} Export as text")
-        print(f"  {GREEN}0.{RESET} Skip")
-        
-        choice = input(f"\n  {BOLD}Select {GREEN}▶{RESET} ").strip()
-        if choice == "1":
-            filepath = export_json(all_results)
-            print_success(f"Saved to {filepath}")
-        elif choice == "2":
-            filepath = export_csv(all_results)
-            print_success(f"Saved to {filepath}")
-        elif choice == "3":
-            filepath = export_text(all_results)
-            print_success(f"Saved to {filepath}")
-
-
-def menu_view_blacklist():
-    """Display full blacklist"""
-    print_section("Blacklist - Forbidden to Mod")
-    
-    for item in BLACKLIST:
-        print(f"  {RED}✗{RESET} {item.title()}")
-
-
-def menu_cache_info():
-    """Show cache information"""
-    print_section("Cache Settings")
-    
-    stats = cache.get_stats()
-    print(f"  {CYAN}Enabled:{RESET} {cache.enabled}")
-    print(f"  {CYAN}TTL:{RESET} {cache.ttl}s ({cache.ttl // 3600}h)")
-    print(f"  {CYAN}Files:{RESET} {stats['files']}")
-    print(f"  {CYAN}Size:{RESET} {stats['size'] / 1024:.1f} KB")
-    print(f"  {CYAN}Directory:{RESET} {stats['dir']}")
-    
-    print(f"\n  {GREEN}1.{RESET} Clear cache")
-    print(f"  {GREEN}0.{RESET} Back")
-    
-    choice = input(f"\n  {BOLD}Select {GREEN}▶{RESET} ").strip()
-    if choice == "1":
-        cache.clear()
-        print_success("Cache cleared")
-
-
-def menu_filter_games():
-    """Search games with smart filtering"""
-    print_section("Smart Game Filter")
-    
-    print(f"{CYAN}Filter Settings:{RESET}")
-    print(f"  {GRAY}Exclude big publishers | Exclude online games{RESET}")
-    print(f"  {GRAY}Keyword filters: multiplayer, online, pvp{RESET}")
-    print()
-    
-    query = input(f"  {CYAN}Search query (e.g., 'rpg offline') {GREEN}▶{RESET} ").strip()
-    if not query:
-        return
-    
-    progress = Progress(1, prefix="Searching")
-    progress.start()
-    
-    games, error = search_games(query, limit=30)
-    progress.finish()
-    
-    if error or not games:
-        print_error("No results found.")
-        return
-    
-    print(f"\n{YELLOW}Found {len(games)} games. Applying filters...{RESET}")
-    
-    filters = {
-        "exclude_big_publishers": True,
-        "exclude_online": True,
-        "keywords_include": [],
-        "keywords_exclude": ["multiplayer", "online", "pvp"],
-    }
-    
-    from scrapers.apkpure import filter_games as apkpure_filter
-    
-    progress = Progress(len(games), prefix="Filtering")
-    filtered = []
-    
-    for game in games:
-        metadata, _ = get_game_metadata(game["package"])
-        if metadata:
-            game["metadata"] = metadata
-            
-            is_indie = metadata.get("is_indie", True)
-            is_online = metadata.get("is_online", False)
-            
-            if filters["exclude_big_publishers"] and not is_indie:
-                progress.update()
-                continue
-            if filters["exclude_online"] and is_online:
-                progress.update()
-                continue
-            
-            name_lower = game["name"].lower()
-            pkg_lower = game["package"].lower()
-            
-            skip = False
-            for keyword in filters["keywords_exclude"]:
-                if keyword in name_lower or keyword in pkg_lower:
-                    skip = True
-                    break
-            
-            if skip:
-                progress.update()
-                continue
-        
-        filtered.append(game)
-        progress.update()
-    
-    progress.finish()
-    
-    if not filtered:
-        print_warning("No games match the filter criteria.")
-        return
-    
-    print(f"\n{BOLD}{GREEN}Filtered Results ({len(filtered)} games):{RESET}\n")
-    
-    for i, game in enumerate(filtered[:15], 1):
-        meta = game.get("metadata", {})
-        dl = meta.get("downloads", 0)
-        rating = meta.get("rating", 0)
-        
-        dl_str = f"{dl/1000000:.1f}M" if dl >= 1000000 else f"{dl/1000:.0f}K" if dl > 0 else "N/A"
-        rating_str = f"★ {rating:.1f}" if rating > 0 else "N/A"
-        
-        print(f"  {GREEN}{i}.{RESET} {game['name']}")
-        print(f"     {GRAY}{game['package']} | {dl_str} downloads | {rating_str}{RESET}")
-    
-    choice = input(f"\n  {CYAN}Check a game on Platinmods? (number or 0 to skip) {GREEN}▶{RESET} ").strip()
-    if choice.isdigit() and int(choice) > 0 and int(choice) <= len(filtered):
-        game = filtered[int(choice) - 1]
-        print(f"\n{YELLOW}Checking {game['name']} on Platinmods...{RESET}")
-        result = check_single_game(game["name"], game["package"])
-        
-        if result["status"] == "available":
-            print_success("Available for modding!")
-        elif result["status"] == "modded":
-            print_warning(f"Already modded ({len(result['threads'])} threads)")
-            display_threads(result["threads"])
-        else:
-            print_error(result.get('reason', result.get('error', 'Unknown')))
-
-
 def main():
     """Main menu loop"""
     while True:
@@ -657,17 +449,11 @@ def main():
         elif choice == "2":
             menu_check_playstore_url()
         elif choice == "3":
-            menu_search_apkpure()
+            menu_search_games()
         elif choice == "4":
             menu_find_moddable()
         elif choice == "5":
             menu_batch_check()
-        elif choice == "6":
-            menu_view_blacklist()
-        elif choice == "7":
-            menu_cache_info()
-        elif choice == "8":
-            menu_filter_games()
         elif choice == "0":
             print(f"\n  {GREEN}Good luck modding!{RESET}\n")
             break

@@ -66,9 +66,12 @@ class Progress:
         bar = self._get_bar()
         elapsed = self._get_elapsed()
         
-        # Estimate remaining time
+        elapsed = time.time() - self.start_time
+        if elapsed <= 0:
+            elapsed = 0.001
+
         if self.current > 0:
-            rate = self.current / (time.time() - self.start_time)
+            rate = self.current / elapsed
             remaining = (self.total - self.current) / rate
             eta = f"{remaining:.0f}s" if remaining < 60 else f"{remaining/60:.1f}m"
         else:

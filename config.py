@@ -2,6 +2,9 @@
 Configuration file - All settings for the script
 """
 
+__version__ = "1.5.4"
+__author__ = "NIGHT-z"
+
 import json
 import os
 from pathlib import Path
@@ -34,7 +37,7 @@ def load_blacklist():
 # Blacklist (loaded from external file)
 BLACKLIST = load_blacklist()
 
-# APKPure categories for game discovery
+# Game categories for auto-scan discovery
 GAME_CATEGORIES = [
     {"id": "CASUAL", "name": "Casual"},
     {"id": "ARCADE", "name": "Arcade"},

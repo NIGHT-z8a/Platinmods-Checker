@@ -7,7 +7,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scrapers.platinmods import check_game as platinmods_check
-from scrapers.apkpure import get_game_metadata
+from scrapers.playstore import get_game_metadata
 from config import BLACKLIST
 
 
