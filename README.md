@@ -8,30 +8,24 @@ A CLI tool to check if Android games are already modded on [Platinmods](https://
 
 - **Check by Game Name** - Search Platinmods for existing mods
 - **Check by Play Store URL** - Paste a Google Play link, auto-extract package and check
-- **Search APKPure** - Discover games and check their mod status
-- **Auto-Scan** - Scan multiple categories and find available games to mod
+- **Search Play Store** - Search Google Play for games and check mod status
+- **Auto-Scan** - Scan multiple categories (multi-query pooling for max results) and find available games to mod
 - **Batch Check** - Load games from a file and check them all at once
-- **Blacklist Detection** - Warns if game is on Platinmods blacklist
+- **Blacklist Detection** - Warns if game is on Platinmods blacklist (130+ entries)
+- **Smart Filtering** - Remove big publishers and online-only games from results
 - **Caching** - Results cached for 1 hour to speed up repeated checks
 - **Export Results** - Save checks as JSON, CSV, or text files
-- **Rate Limiting** - Built-in delays and retries to avoid being blocked
+- **Zero Dependencies** - Uses only Python standard library
 
 ## Requirements
 
 - Python 3.8+
-- Internet connection (scrapes Platinmods & APKPure live)
-- No external dependencies needed
+- Internet connection
 
 ## Quick Start
 
-### Run with Python
 ```bash
-python3 main.py
-```
-
-### Run Binary (Linux)
-```bash
-./dist/Platinmods\ Checker
+python main.py
 ```
 
 ## Usage
@@ -42,14 +36,13 @@ python3 main.py
 |--------|-------------|
 | 1 | Check game on Platinmods |
 | 2 | Check by Google Play URL |
-| 3 | Search games on APKPure |
+| 3 | Search games on Play Store |
 | 4 | Find moddable games (auto-scan) |
 | 5 | Batch check from file |
-| 6 | View blacklist |
-| 7 | Cache settings |
 | 0 | Exit |
 
 ### Check by Play Store URL
+
 ```
 Select ▶ 2
 Google Play URL ▶ https://play.google.com/store/apps/details?id=com.kiloo.subwaysurfers
@@ -71,7 +64,9 @@ Game name: Subway Surfers
 ```
 
 ### Batch Check from File
+
 Create a text file with one game per line:
+
 ```
 # games.txt
 Subway Surfers,com.kiloo.subwaysurfers
@@ -84,9 +79,9 @@ Then select option 5 and point to the file.
 ## Project Structure
 
 ```
-Platinmods modded games apps/
+Platinmods-Checker/
 ├── main.py              # CLI entry point
-├── config.py            # Blacklist + settings
+├── config.py            # Settings + version
 ├── core/
 │   ├── cache.py         # JSON-based caching
 │   ├── checker.py       # Game checking logic
@@ -94,11 +89,11 @@ Platinmods modded games apps/
 ├── scrapers/
 │   ├── http_client.py   # HTTP with retry + rate limit
 │   ├── platinmods.py    # Platinmods forum scraper
-│   └── apkpure.py       # APKPure game discovery
+│   └── playstore.py     # Google Play Store game discovery
 ├── utils/
-│   └── progress.py      # Progress bars & spinners
-├── dist/
-│   └── Platinmods Checker  # Compiled binary (Linux)
+│   └── progress.py      # Progress bars
+├── data/
+│   └── blacklist.json   # 130+ forbidden games/publishers
 └── .cache/              # Auto-generated cache
 ```
 
@@ -125,40 +120,14 @@ Platinmods modded games apps/
 | `[Outdated]` | Gray | Outdated mod |
 | `[Mod]` | White | General mod thread |
 
-## Blacklist
-
-Games on the blacklist require permission from G-bo before posting. Includes:
-- PUBG (all versions)
-- COD (all versions)
-- Minecraft + same publisher
-- World of Tanks + Wargaming games
-- BitLife (all versions)
-- Stumble Guys, 8 Ball Pool
-- And 120+ more...
-
-See `config.py` for the full list.
-
 ## Build from Source
 
-### Install PyInstaller
 ```bash
 pip install pyinstaller
-```
-
-### Build Binary
-```bash
 pyinstaller --onefile --name "Platinmods Checker" main.py
 ```
 
 Output: `dist/Platinmods Checker`
-
-## Platform Support
-
-| Platform | Python | Binary |
-|----------|--------|--------|
-| Linux | Yes | Yes |
-| Windows | Yes | Build on Windows |
-| macOS | Yes | Build on macOS |
 
 ## License
 
