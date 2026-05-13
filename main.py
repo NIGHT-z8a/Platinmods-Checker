@@ -59,8 +59,8 @@ def print_menu():
     print(f"{BOLD}{BLUE}├{'─' * MENU_WIDTH}┤{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {GREEN}1.{RESET} Check game on Platinmods{' ' * (MENU_WIDTH - 29)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {GREEN}2.{RESET} Check by Google Play URL{' ' * (MENU_WIDTH - 29)}{BOLD}{BLUE}│{RESET}")
-    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}3.{RESET} Search games on Play Store{' ' * (MENU_WIDTH - 29)}{BOLD}{BLUE}│{RESET}")
-    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}4.{RESET} Find moddable games (auto-scan){' ' * (MENU_WIDTH - 34)}{BOLD}{BLUE}│{RESET}")
+    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}3.{RESET} Search games on Play Store{' ' * (MENU_WIDTH - 31)}{BOLD}{BLUE}│{RESET}")
+    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}4.{RESET} Find moddable games (auto-scan){' ' * (MENU_WIDTH - 36)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {GREEN}5.{RESET} Batch check from file{' ' * (MENU_WIDTH - 26)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {GREEN}6.{RESET} Cache settings{' ' * (MENU_WIDTH - 19)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}├{'─' * MENU_WIDTH}┤{RESET}")
@@ -431,6 +431,82 @@ def menu_find_moddable():
             print_success(f"Saved {len(avail_only)} games to {filepath}")
         elif choice != "0":
             print_error("Invalid option.")
+
+def menu_batch_check():
+    """Batch check games from a file"""
+    print_section("Batch Check from File")
+
+    filepath = input(f"  {CYAN}Path to game list file {GREEN}▶{RESET} ").strip()
+    if not filepath:
+        return
+
+    if not os.path.isfile(filepath):
+        print_error(f"File not found: {filepath}")
+        return
+
+    with open(filepath, "r") as f:
+        lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+
+    if not lines:
+        print_error("No games found in file.")
+        return
+
+    print_info(f"Loaded {len(lines)} game(s)")
+    results = []
+    progress = Progress(len(lines), prefix="Checking")
+    progress.start()
+
+    for entry in lines:
+        parts = [p.strip() for p in entry.split(",")]
+        game_name = parts[0]
+        pkg = parts[1] if len(parts) > 1 else None
+        result = check_single_game(game_name, pkg)
+        results.append((game_name, result))
+        progress.update()
+
+    progress.finish()
+
+    modded = [r for r in results if r[1]["status"] == "modded"]
+    available = [r for r in results if r[1]["status"] == "available"]
+    blacklisted = [r for r in results if r[1]["status"] == "blacklisted"]
+    errors = [r for r in results if r[1]["status"] == "error"]
+
+    print_section("Results")
+    print(f"  {CYAN}Total:{RESET} {len(results)} | {YELLOW}Modded:{RESET} {len(modded)} | {GREEN}Available:{RESET} {len(available)} | {RED}Blacklisted:{RESET} {len(blacklisted)} | {RED}Errors:{RESET} {len(errors)}")
+
+    if modded:
+        print(f"\n  {CYAN}Already modded:{RESET}")
+        for name, result in modded:
+            print(f"    {YELLOW}●{RESET} {name} ({len(result['threads'])} thread(s))")
+
+    if available:
+        print(f"\n  {GREEN}Available to mod:{RESET}")
+        for name, _ in available:
+            print(f"    {GREEN}●{RESET} {name}")
+
+    if blacklisted:
+        print(f"\n  {RED}Blacklisted:{RESET}")
+        for name, result in blacklisted:
+            print(f"    {RED}●{RESET} {name} - {result.get('reason', 'N/A')}")
+
+    if errors:
+        print(f"\n  {RED}Errors:{RESET}")
+        for name, result in errors:
+            print(f"    {RED}●{RESET} {name} - {result.get('error', 'Unknown')}")
+
+    choice = input(f"\n  {CYAN}Export results? (y/n) {GREEN}▶{RESET} ").strip().lower()
+    if choice == "y":
+        print(f"\n  {GREEN}1.{RESET} JSON")
+        print(f"  {GREEN}2.{RESET} CSV")
+        print(f"  {GREEN}3.{RESET} Text")
+        fmt = input(f"\n  {BOLD}Select {GREEN}▶{RESET} ").strip()
+        data = [{"name": r[0], **r[1]} for r in results]
+        if fmt == "1":
+            export_json(data)
+        elif fmt == "2":
+            export_csv(data)
+        else:
+            export_text(data)
 
 def menu_cache_info():
     """Show cache information"""
