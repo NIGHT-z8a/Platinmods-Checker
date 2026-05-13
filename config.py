@@ -2,7 +2,7 @@
 Configuration file - All settings for the script
 """
 
-__version__ = "1.6.0"
+__version__ = "1.7.1"
 __author__ = "NIGHT-z"
 
 import json

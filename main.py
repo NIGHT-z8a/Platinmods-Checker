@@ -27,7 +27,7 @@ RESET = "\033[0m"
 BOLD = "\033[1m"
 DIM = "\033[2m"
 
-__version__ = "1.6.0"
+__version__ = "1.7.1"
 __author__ = "NIGHT-z"
 
 # ASCII Art Banner - Rainbow
@@ -270,11 +270,12 @@ def menu_search_games():
     if not query:
         return
     
-    progress = Progress(1, prefix="Searching")
-    progress.start()
+    from utils.progress import Spinner
+    spinner = Spinner("Searching Play Store")
+    spinner.start()
     
     games, error = search_games(query, limit=30)
-    progress.finish()
+    spinner.stop(success=not error and bool(games))
     
     if error or not games:
         print_error("No results found.")
@@ -397,7 +398,7 @@ def menu_find_moddable():
         meta = r.get("metadata", {})
         size = meta.get("size", "")
         version = meta.get("version", "")
-        indie_str = "Indie" if meta.get("is_indie", True) else "Publisher"
+        indie_str = "Publisher" if not meta.get("is_indie", True) else ""
         extras = " | ".join(x for x in [size, f"v{version}" if version else "", indie_str] if x)
         print(f"  {GREEN}✓{RESET} {r['name']} {GRAY}({r['package']}){RESET}")
         if extras:
