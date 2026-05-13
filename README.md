@@ -1,4 +1,4 @@
-# Platinmods Checker v1.6.0
+# Platinmods Checker v1.7.1
 
 **Author:** NIGHT-z
 
