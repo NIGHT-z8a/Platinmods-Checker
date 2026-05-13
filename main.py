@@ -57,11 +57,8 @@ def print_menu():
     print(f"{BOLD}{BLUE}┌{'─' * MENU_WIDTH}┐{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {BOLD}{CYAN}Main Menu{RESET}{' ' * (MENU_WIDTH - 11)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}├{'─' * MENU_WIDTH}┤{RESET}")
-    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}1.{RESET} Check game on Platinmods{' ' * (MENU_WIDTH - 29)}{BOLD}{BLUE}│{RESET}")
-    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}2.{RESET} Check by Google Play URL{' ' * (MENU_WIDTH - 29)}{BOLD}{BLUE}│{RESET}")
-    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}3.{RESET} Search games on Play Store{' ' * (MENU_WIDTH - 29)}{BOLD}{BLUE}│{RESET}")
-    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}4.{RESET} Find moddable games (auto-scan){' ' * (MENU_WIDTH - 34)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {GREEN}5.{RESET} Batch check from file{' ' * (MENU_WIDTH - 26)}{BOLD}{BLUE}│{RESET}")
+    print(f"{BOLD}{BLUE}│{RESET}  {GREEN}6.{RESET} Cache settings{' ' * (MENU_WIDTH - 19)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}├{'─' * MENU_WIDTH}┤{RESET}")
     print(f"{BOLD}{BLUE}│{RESET}  {RED}0.{RESET} Exit{' ' * (MENU_WIDTH - 9)}{BOLD}{BLUE}│{RESET}")
     print(f"{BOLD}{BLUE}└{'─' * MENU_WIDTH}┘{RESET}")
@@ -432,8 +429,32 @@ def menu_find_moddable():
         elif choice != "0":
             print_error("Invalid option.")
 
+def menu_cache_info():
+    """Show cache information"""
+    print_section("Cache Settings")
+
+    stats = cache.get_stats()
+    print(f"  {CYAN}Enabled:{RESET} {cache.enabled}")
+    print(f"  {CYAN}TTL:{RESET} {cache.ttl}s ({cache.ttl // 3600}h)")
+    print(f"  {CYAN}Files:{RESET} {stats['files']}")
+    print(f"  {CYAN}Size:{RESET} {stats['size'] / 1024:.1f} KB")
+    print(f"  {CYAN}Directory:{RESET} {stats['dir']}")
+
+    if stats['files'] > 0:
+        print(f"\n  {GREEN}1.{RESET} Clear cache")
+        print(f"  {GREEN}0.{RESET} Back")
+
+        choice = input(f"\n  {BOLD}Select {GREEN}▶{RESET} ").strip()
+        if choice == "1":
+            cache.clear()
+            print_success("Cache cleared")
+
+
 def main():
     """Main menu loop"""
+    expired = cache.clean_expired()
+    if expired:
+        pass
     while True:
         print_banner()
         print_menu()
@@ -454,6 +475,8 @@ def main():
             menu_find_moddable()
         elif choice == "5":
             menu_batch_check()
+        elif choice == "6":
+            menu_cache_info()
         elif choice == "0":
             print(f"\n  {GREEN}Good luck modding!{RESET}\n")
             break

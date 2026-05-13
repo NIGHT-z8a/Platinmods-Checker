@@ -78,6 +78,26 @@ class Cache:
             except IOError:
                 pass
     
+    def clean_expired(self):
+        """Remove all expired cache files"""
+        if not self.enabled:
+            return 0
+
+        removed = 0
+        now = time.time()
+        for cache_file in self.cache_dir.glob("*.json"):
+            try:
+                with open(cache_file, "r") as f:
+                    data = json.load(f)
+                if now - data.get("timestamp", 0) > self.ttl:
+                    cache_file.unlink()
+                    removed += 1
+            except (json.JSONDecodeError, IOError):
+                cache_file.unlink()
+                removed += 1
+
+        return removed
+
     def get_stats(self):
         """Get cache statistics"""
         if not self.enabled:
