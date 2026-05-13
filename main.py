@@ -27,7 +27,7 @@ RESET = "\033[0m"
 BOLD = "\033[1m"
 DIM = "\033[2m"
 
-__version__ = "1.5.4"
+__version__ = "1.6.0"
 __author__ = "NIGHT-z"
 
 # ASCII Art Banner - Rainbow
