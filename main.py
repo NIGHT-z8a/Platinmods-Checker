@@ -382,7 +382,6 @@ def menu_find_moddable():
     games = games[:max_checks]
     print(f"\n{YELLOW}Checking {len(games)} games against Platinmods...{RESET}")
     
-    all_results = []
     progress = Progress(len(games), prefix="Checking")
     progress.start()
     
@@ -422,7 +421,7 @@ def menu_find_moddable():
         
         choice = input(f"\n  {BOLD}Select {GREEN}▶{RESET} ").strip()
         if choice in ("1", "2", "3"):
-            avail_only = [r for r in all_results if r["status"] == "available"]
+            avail_only = results["available"]
             if choice == "1":
                 filepath = export_json(avail_only)
             elif choice == "2":
